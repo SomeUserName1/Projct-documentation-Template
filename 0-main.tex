@@ -1,0 +1,61 @@
+\documentclass[a4paper]{report}
+\usepackage{fancyhdr}
+\usepackage{scrextend}
+\usepackage[utf8]{inputenc}
+\usepackage{coordsys,logsys,color}
+\usepackage[bookmarksopen,bookmarksdepth=5]{hyperref}
+\usepackage{url}
+\usepackage{texdraw}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{listings}
+\usepackage{diagbox}
+\usepackage{enumitem}
+\usepackage{cite}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{float}
+\usepackage{tikz}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{ltxtable}
+
+\input{txdtools}
+
+
+\NeedsTeXFormat{LaTeX2e}
+\definecolor{darkblue}{rgb}{0,0,.6}
+\hypersetup{colorlinks=true, breaklinks=true, linkcolor=black, menucolor=darkblue, urlcolor=darkblue, citecolor=darkblue}
+
+\pagestyle{fancy}
+
+\setlength{\headheight}{14pt}
+\input{preamble.tex}
+\begin{document}
+
+\include{00-title}
+
+\chapter{Methodology}
+\include{01-introduction}
+\include{02-architecture} 
+\include{03-discussion}
+\include{04-future-work}
+
+\bibliography{resources}
+\bibliographystyle{apalike}
+
+\addtocontents{toc}{\protect\setcounter{tocdepth}{2}}
+
+\chapter{Product Documentation}
+\include{05-roadmap} % Together
+\include{06-srs} % Jamie
+\include{07-sdd} % Chandan
+
+
+\chapter{Implementation \& Evaluation}
+\include{08-data}
+\include{09-eval}
+
+
+
+\end{document}

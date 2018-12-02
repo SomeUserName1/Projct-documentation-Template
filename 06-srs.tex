@@ -1,0 +1,173 @@
+\section{Appendix B: Software Requirement Specification}
+
+\subsection{Introduction}
+	\subsubsection{Purpose}
+			The purpose of this Software Requirements Specification is to describe the features, constraints and demands of a Zoo Management Tool in detail. This document is intended for both the stakeholders and the developers of the system and will be proposed to the zoo director Dr. Susan Seuss and her Staff.
+	\subsubsection{Scope}
+			This Software system shall implement a Zoo Management Tool, that assists the zoo-keepers in ordering feed, managing and visualizing the feeding costs of each animal , the administration in managing the budgets, preferenced food dealers, communication, staff and working hours and the system itself.
+
+	\subsubsection{Definitions, Acronyms, Abbreviations}
+	\begin{longtable}{|>{\raggedright \arraybackslash}p{3.0cm}||
+	>{\raggedright \arraybackslash}p{2.0cm}|>{\raggedright \arraybackslash}p{10.0cm}|} \hline
+
+	word & shortform & meaning \\ \hline
+	database & db & a facillity to store and alter data \\ \hline
+	Operating System & os & the basic software on a machine \\ \hline
+	C Programming Language & C & a programming language, Windows, macOS, linux and may more os are based on it \\ \hline
+	functions and methods & - & programmed descriptions of the working steps of a reoccuring task on information \\ \hline
+	user & - & person, that is going to use the here described software. \\ \hline
+	access rights & - & the permission rights on data or the alteration of data \\ \hline
+	usergroup & - & a category for users with the same access rights \\ \hline
+	\dots & \dots & \dots \\ \hline
+	\hline
+	\end{longtable}
+
+
+	\subsubsection{Overview}
+		In the second chapter several conditions, assumptions and circumstances will be mentioned, that help charachterizing the software's special use case. In the thrid chapter the concrete requirements are listed.
+		\newpage
+\subsection{Overall description}
+
+	\subsubsection{Product Perspective}
+		The product shall support three main tasks of the daily work in the zoo: 1. Budget management, 2. Feed management and 3. Scheduling management. This shall be done by a database, that shall save related information and functions and methods, that operates on this data.
+
+	\subsubsection{Product Functions}
+		The system shall store information on the budget and take care of balancing each month. It shall support the zoo staff in communicating request for additional funds, by providing forms, notifications and historical information on the requests. The system shall store information on available feeds, their expiration date, orders and invoices. It shall also store information about employees and schedules of holidays and working hours.
+
+	\subsubsection{User Characteristics}
+		The users are the staff of a zoo. Therefore standard user will not have advanced technical knowldege, but they are able to visit websites to order food and to read from the graphic user interface of a tablebased database. \\
+		There are three different type of users: \\
+		\begin{itemize}
+			\item Zoo keepers: responsible for animals and their feed, including the ordering of new feed. They have the right to view animal budgets, they have the right to view and alter the feed information. They don't have the right to view employee information or other budget information than animal budget information. \\
+			\item Secretary: Cares about scheduling working hours, vacation, the employee budget, delivery issues and probably other occuring problems. Therefore she needs access on Employee information and the employee budget, orders, invoices, and eventually more. So there shall be a usergroup, that is easy adjustable, so that the secretary can be granted temporary rights for things she only need to handle once or to change her permanent access and alter rights quickly. This usergroup needs to be more secure. \\
+		 	\item Zoo director: The administrator of the zoo and the future system. Needs full access and altering rights; has to be most secure.
+		\end{itemize}
+
+	\subsubsection{Constraints}
+		\begin{itemize}
+			\item Security critical accounts for usergroups 2 and 3, due to personal and financial critical data.
+		\end{itemize}
+
+	\subsubsection{Assumptions and Dependencies}
+		The tablets for the software to be run on are present and provide an operating system, that implements a messaging system and is compatible to the C programming language (and by that C based languages).
+
+
+	\subsection{Specific Requirements}
+
+	\subsubsection{External interfaces}
+	Tablets and their os, a fitting database management system (details omitted, no implementation/concrete facts about this)
+
+	\subsection{Functional requirements}
+
+\begin{enumerate}[label*=\arabic*]
+\item Order- and feed-management
+	\begin{enumerate}[label*=\arabic*]
+	\item The system shall highlight entries that passed their expiration date.
+	\item The system shall be able to check if a planned order’s invoice total will exceed the monthly budget of an animal.
+	\item The system shall only deduct the invoice total from the budget if an order arrived.
+	\item The system shall provide a arrived checkbox for each order to mark it as arrived with a date stamp.
+	\item If an order does not arrive in time, the system shall mark it "overdue" and highlight it.
+	\item The system has to be implemented so, that the list of authorized feed dealers can be edited by a user with sufficient rights in the system.
+	\item The system shall provide a request for additional funds form for the corresponding user if the invoice total of an order would exceed budget or if the planned payment of a temporary worker would exceed the budget.
+	\end{enumerate}
+
+\item Budget-management
+\begin{enumerate}[label*=\arabic*]
+	\item The system shall be so implemented, that at the end of a month only the spent amount of the budget shall be deducted from the total zoo budget.
+	\item The system shall reserve the sum of the animal budgets from the overall budget.
+	\item The system shall make it possible to alter the monthly budget and the monthly reserved budgets. A user with sufficient rights in the system shall be able to write the new amounts and confirm them with its log-in data. The person or persons that are concerned with the altered budget shall be informed by the system.
+	\item The system shall include a graphical representation of the total monthly budget, money already spent in the current month, reserved monthly sub-budgets (such as budgets for feed or salaries and wages) and money not spent or reserved for this month.
+	\item The system shall provide a graphical representation of: total animal budget of the month, amount spent already, amount reserved for pending deliveries, amount not spent for each animal.
+	\item The system shall balance the account monthly and carry the result to the next month.
+	\item The system shall be able to store and print invoices.
+	\item The system shall highlight the balance green if it's positive and red if it's negative. If it's negative the system shall issue a warning.
+	\item The system shall send a message to the zoo director if a request for a budget increase is submitted; there shall be a link to the corresponding budget, the stock of the corresponding animal’s feed and an average cost per order. 
+	\item The system shall include an overview on the budget spanning the last 6 month. This overview shall include: money spent for every month, average money spent, number of budget increase requests, number of requests granted, number of requests denied, links to the corresponding statements. This overview shall be generated and linked in the message to the zoo director for each request that is submitted. 
+	\item If the zoo director grants an increase request, the system shall make it possible to enter the amount by which the budget is increased. This amount shall be added to the current month’s reserve. A message shall be send to the applicant, containing the information that the request was granted and the amount by which the budget was increased. In case of the applicant being a zookeeper a message shall be send to all zookeepers that are responsible for the animal or animals affected by this request. The affected budget shall be increased. In the overview this shall be marked as ”additional funds granted on request”.
+	\item If the request is denied, a message that contains a short statement written by the zoo director shall be send to the applicant.
+\end{enumerate}
+\item Schedule-management
+	\begin{enumerate}[label*=\arabic*]
+		\item The system shall, if a temporary worker is needed, check if there is enough money left in the employee budget. 
+		\item If there is a delay in delivery the system shall inform the secretary.
+		\item The system shall be able to sort all personnel by tasks, working hours and availability.
+		\item The system shall warn the user if one tries to include a worker into the schedule during their planned holiday.
+		\item If the secretary is able to resolve the problem with the food dealer, the system shall send a message to all zoo keepers of the corresponding animal, including a statement and if available the new delivery date. The new delivery date shall be updated to the corresponding order and marked as new delivery date.
+		\item The system shall inform the zoo director if a temporary worker needs to be hired more than 40 hours in one month.
+		\item If an user wants to plan a vacation, this user has to get a permission by the secretary. The system shall check for conflicts with other planned vacation of personnel with the same task or tasks and if there are enough unused holidays. If the secretary grants the request for holidays, the system shall send a message to the employee and the planned vacation shall be entered into the employee information. If she does not grant the request, a notification with a short statement shall be send to the applicant by the system. In the employee information the system shall remark that ”a request for holidays was denied” with a link to the request or requests.
+\end{enumerate}
+\end{enumerate}
+\subsection{Datebase requirements}
+\begin{enumerate}[label*=\arabic*]
+		\item The system shall provide a separate budget for every animal.
+		\item The system shall store information about the available feeds including their quantity and their expiration dates.
+		\item The system shall provide the information how much of the monthly budget was already spent on an animal.
+		\item The system shall store data on the budget, containing how much was spent, for what and when, how much was earned, by what and when, how much was reserved, for what and when, money left/balance.
+		\item The system shall store employee information containing the following: salary or wage, working hours, unused holidays, planned holidays, requested holidays, denied holiday requests, availability for overtime and in case of temporary workers availability and hours worked in the current month, hours worked total and the tasks that they are able to fulfill.
+		\item The system shall be able to store orders, containing its invoces and an expected delivery date.
+		\item Orders shall be deleteable.
+\end{enumerate}
+\subsection{Software System requirements}
+\begin{enumerate}[label*=\arabic*]
+		\item Maintainability
+		\item Security
+		\item Stability
+		\item Cost efficience
+\end{enumerate}
+
+
+\subsection{Auditory multi task model}
+
+The audio system functions as follows:
+
+\begin{enumerate}
+\item When human speech is detected, chunks of audio (e.g. 100ms long chunks) are sent consecutively to a speech recogniser (e.g. Google Speech). The speech recogniser sends back an intermediate result. When the human voice has finished, the speech recogniser will send a final result.
+\item When the human voice is detected and the audio chunks are arriving, each audio chunk should be sent to the speech recogniser and the multi task model. They both compute intermediate results, which are documented below. A single ROS message will be sent with all of the intermediate results: e.g. text, confidence, language, voice\_id, voice\_expressions and voice\_acitivities.
+\item When the human voice has finished, a final audio chunk is sent to the speech recogniser and multi task model, which both compute the final result. A single ROS message will be sent with all of the final results: e.g. text, confidence, language, voice\_id, voice\_expressions and voice\_acitivities.
+\item We assume 1 speaker.
+\end{enumerate}
+
+The target properties (those computed by multi model include Properties, Voice ID, Voice Expressions, Voice Acitvities), in addition to what is computed by the speech recogniser:
+
+Recognised speech: (will je Google Speech to start with):
+\begin{itemize}
+\item Text: recognised speech, converted to text.
+\item Confidence: confidence of result.
+\item Language: language of recognised speech speech.
+\end{itemize}
+Properties:
+\begin{itemize}
+\item List of property names (e.g. age, gender, ethnicity, volume)
+\item List of property values
+\item List of confidences
+\end{itemize}
+Voice ID (e.g. 64-dimensional)
+\begin{itemize}
+\item Vector (feature vectors are input independent as they extract the degree of certain traits, like the pitch of the voice. Further sound may be seen as an image (just draw the frequencies). If one does fourier analysis one extracts distinct frequency bands (an example for hand-crafted features, here math. implied)
+\item Confidence
+\end{itemize}
+Voice Expressions
+\begin{itemize}
+\item List of voice expression names (e.g. happy, sad - the models used could be customised, e.g. we could use emotion, valence, arousal etc this is data st dependent etc…)
+\item List of confidences
+\end{itemize}
+Voice activities (could also assume you have an image of the face for this one)
+\begin{itemize}
+\item List of voice activity names (e.g. speaking, laughing, yawning, coughing)
+\item List of confidences
+\end{itemize}
+
+Possible datasets for training include:
+\begin{itemize}
+\item Voice ID: %http://www.openslr.org/12/ (CC BY 4.0)
+\item Voice Expression: %https://github.com/numediart/EmoV-DB (cite paper in order to use it)
+\item Voice acitvities: %https://research.google.com/audioset/ontology/human_sounds_1.html (CC BY 4.0)
+\end{itemize}
+
+How have people solved these before:
+\begin{itemize}
+\item Voice ID:% https://medium.com/analytics-vidhya/building-a-speaker-identification-system-from-scratch-with-deep-learning-f4c4aa558a56 (there is code but no license so better just use it for inspiration, uses openslr dataset)
+\item Voice Expression: %https://arxiv.org/abs/1803.01122
+\item Voice activity: e.g. %https://github.com/jrgillick/laughter-detection, https://github.com/ideo/LaughDetection (uses AudioSet)
+\end{itemize}
+      

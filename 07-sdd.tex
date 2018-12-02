@@ -1,0 +1,290 @@
+\section{Appendix C: Software Design Document}
+
+	\subsection{Introduction}
+		\subsubsection{Purpose}
+			This document is written, to document the proposed architecture of a zoo management system. The document is inteded for the developers implementing the system, the persons deploying the final system and the other stakeholders to see the process and decide, if the developed system is according to the specifications.
+		\subsubsection{Scope}
+			The System developed is a zoo management system, that assists the zoo keepers in ordering food, managing and visualizing the feed cost of each animal, the administrators in managing budgets, preferred feed dealers and the staff. The software requirements specification is already present.
+		\subsubsection{Definitions, Acronyms, Abbreviations}
+			\begin{tabular}{|p{.2\textwidth}|p{.1\textwidth}|p{.60\textwidth}|}
+				\hline
+			\textbf{term}&\textbf{short form}&\textbf{description}\\
+				\hline
+				Java&-&A portable programming language\\
+				\hline
+				Java Virtual Machine&JVM&The software system nessecary to run java applications.\\
+				\hline
+				Database Management System&DBMS&A software system used to manage, create and maintain databases.\\
+				\hline
+				relational DBMS&-&DBMS storing data in tables referencing each other.\\
+				\hline
+				Transport Control Protocol / Internet Protocol&TCP/IP&Low level Protocols to transfere data over the internet.\\
+				\hline
+				Secure Hypertext Transfer Protocol&HTTPS&The standard protocol to transfer data over the internet in a secure fashion.\\
+				\hline
+
+			\end{tabular}
+		\subsubsection{References}
+			\begin{enumerate}
+				\item SRS Document
+				\item Enumerated Requirements Document
+			\end{enumerate}
+		\subsubsection{Overview}
+			The proposed architecture will be shown from a static point of view, eg. the decomposition into subsystems and their structure. Then the final deployment will be shown. This includes the distribution of the software across the different hardware used. Furthermore the data management is visible. Therefore the database design is modeled and the used DBMS is mentioned. The next part contains a description of the security features of the system and how the users are managed. The dynamic aspects of the system are following. This contains the description of interfaces between components, the behavior of the system and information flow. Finally, used design patterns are mentioned.
+
+	\subsection{Current Architecture}
+		There is no current architecture. It is assumed, that there is a messaging system availible, to send messages to specific users/devices.
+
+	\subsection{Proposed Software Architecture}
+		\subsubsection{Overview}
+		The Zoo management system is a client - server system. It is composed out of the following components.
+			\begin{description}
+				\item [Client] The client module is the complete system running on the client computer. It bundles the UI, navigation and can obtain an access token for the inner components.
+				\item [Server] The server module is the system running on the server computer. It hosts the database and provides user authentification capabilities.
+				\item [FeedManager (FM)] The FM system coordinates all requests concerning the supply, storage and management of feeds and the according feed dealers. It is mainly used by zoo keepers for buying feeds and checking the current quantity and expiration date of stock feeds.
+				\item [EmployeeManager (EM)] The EM system is mainly used by the secretary to create employee schedules, organize temporary workers, check the vacation requests of employees and manage the associated budget.
+				\item [BudgetManager (BM)] The BM system organizes the budget of the zoo. It is used to generate reports, get an overview of the current budget and provide information to prevent negative balances. It is mainly used by the zoo director to organize the subbudgets for feeds and employees as well as granting or dening requests for additional funding created by other employees.
+				\item [UserManager (UM)] The UM system is used to create and manage user accounts of the system. It is exclusively used by the zoo director.
+				\item [Messaging subsystem (MSS)] The MSS is used by the system to deliver messages to special user accounts. It is an external system, which is used by the zoo management system.
+				\item [MessageManager (MM)] The Message manager is a client component, which is used to display messages that are received from the MSS.
+				\item [AuthUtility (AU)] The AU is a compontent running on the server. It is the only way to access the system internals. This component checks, if provided login credentials are valid, and if the access level of the user is high enough.
+				\item [Database subsystem (DBMS)] The DBMS is the subsystem used for persistent data storage. It is used as a transaction based system.
+			\end{description}
+		\subsubsection{Subsystem decomposition}
+
+			\paragraph{Client}
+				The client component contains the main initialisation code. It provides a host window for the other components to draw their UI and navigational elements to switch the used component. In addition the component is used to obtain an access token from the server, which allows other components to comunicate with the server.
+
+			\paragraph{Server}
+				The server component contains the initialisation code to start the DBMS and routes incoming connections to the AuthUtility.
+			\paragraph{Manager Components}
+				The different manager components are implemented in a similar fashion: By using the \emph{AbstractFactory} Pattern to get instances. The following two models figure and  emphasis this pattern and the implementaion style.
+
+				The \emph{BudgetManager} is instantiated by the \emph{BudgetManagerFactory}. The budgets are modeled as \emph{CompositeBudget}s and \emph{SubBudget}s, both supporting a specific set of operations. In addition animal implements the \emph{Budget} interface, because each \emph{Animal} has an associated budget.
+			
+			\paragraph{MessagingSubSystem}
+				The messaging susbsystem allows the zoo management system to send messages to specific user accounts and devices. The system has to guarantee the delivery of the messages.	The architecture isn't specified any further, because the MSS is an external system and therefore not part of this document.
+			\paragraph{AuthUtility}
+				The AuthUtility is used to access the database. For every request the AuthUtility checks, if the login credentials are valid and not expired. Then the privilege level for the requested action is checkt. If the user has enough permissions the request is passed to the DBMS. The answer is returned to the client.
+			\paragraph{DatabaseManagementSystem}
+				The DBMS used is MariaDB. It is a high performance relational database management system. It is used, because it is a open source software and therefore free of costs. In addition it is widely used and tested. Therefore it is reliable and it may be assumed, that it is supported for the entire lifetime of the zoo management system.
+
+		\subsubsection{Hardware/Software mapping}
+			Figure shows the planned hardware software mapping of the zoo management system. The System is divided into a server and a client part. The server part will run on a server computer, availiable 24/7. The server is responsible for user authentication and the storage of data. The client side consists of tablets and personal computers. These will run the client application, which is used to contact the server via a HTTPS (on top of TCP/IP). The client application requires the Java Runtime Envirement to be installed on personal computers and tablet clients. The client provides the user interface and uses the messaging subsystem to deliver and receive messages to/from users of the system. The hardware allocation of the MSS is not part of this document.
+
+		\subsubsection{Persistent data management}
+			For persistent data management on the server side the open source relational DBMS MariaDB is used. Data is organized in tables according to the scheme in figure. Users have multiple activity logs associated. Each employee has exactly one user account for the system. For each employee, the associated vacation requests and a schedule is stored. Employees are workers of the zoo, so some data is shared with temporary workers (which are workers, too), for example name and wage/salary. For each worker there is possibly a WorkerFundRequest, if the budget was too small to hire the worker. This, in turn, is a specialization of a general FundRequest, which is associated with a given budget. Each budget consists of multiple subbudgets and may contain FundRequests. Another possible FundRequest is the FeedFundRequest, which is issued, if an order exceeds the feed budget. These requests and the associated orders are stored and linked. An order can be delayed and the delivery may be updated, so the possible DeliveryUpdates are stored. The order itself contains one or more Feed offerings. These offerings are stored as an association between FeedDealer and Feed, because the FeedDealer can make an offer for a feed. If a FeedDealer is removed from the system, all the associated feed offerings not contained in an order are deleted too. In addition the system stores all animals and the feeds they are eating. If an animal is removed from the system, the feeds consumed only by this one animal are deleted. If a feed is deleted, the associated offerings are removed, if they aren't contained in any order.
+
+
+			On the client side no DBMS is neseccary, because all used data is loaded at runtime. The only presistent data is the username, which is stored for the next usage of the system.
+		\subsubsection{Access control and security}
+			\paragraph{Network location restrictions}
+				The first layer of security is, to grant access to the system only out of the local network in the zoo. If this is too restrictive, it may be dropped.
+			\paragraph{Network protocol restrictions}
+				The client may only connect to the server using a secure HTTPS connection. This require the server to have a valid SSL certificate. The server will drop every connection attempt using insecure protocols.
+			\paragraph{User account restrictions}
+				The next layer is the AuthUtility. Each user of the system has a user account with a unique user ID and a password. These accounts are managed by the zoo director. When a user tries to contact the application server, he has to provide a valid access token and a valid user account id. The access token is obtained by sending the login credentials to the authentification server. If they are valid an access token is returned. This token has only limited validitiy and has to be obtained again, if timed out. To restrict access for zoo keepers and the secretary, every user account has an integer value associated, which represents the users access level. Each module can check the current access level of the user to determine which functionality is provided.
+			\paragraph{Storage policies}
+				The user passwords aren't stored in plain text. They are hashed using a state of the art hash funktion (PBKDF2 with iteration count larger than 20000) and stored together with the used hash function, salt, and function parameters (iteration count). Because a lot of people use the same password for different services, this prevents potential intruders from taking the password list and using the passwords on other web services or obtaining passwords from other services and using them for the zoo management system.
+			\paragraph{Logging}
+				As an additional security feature the system logs the account accessing the system for every access. These logs are visible for the zoo director.
+		\subsubsection{Global software control}
+			\paragraph{Startup behaviour}
+				\textbf{Server:} When the server machine is booted, the operating system automatically invokes a startup handler of the system. This handler will boot up the database, the AuthUtility and then it will enable the request handling.\\
+				\textbf{Client:} The client application starts on user demand. The client will show a login form for the user. When the user entered his login data the client contacts the server to obtain an access token. The client creates different instances of \emph{UIComponentFactory} for each UI component. The components are initialized with the access token and these factory objects.
+			\paragraph{Interfaces}
+				The \verb|MessagingService| is provided by the MSS. It provides a possibility to notify users with messages. If the notifyUser function is invoked, it is ensured, that the user is notified and the message is stored.
+\begin{verbatim}
+Interface MessagingService {
+  public void sendMessage(string sender,
+      string accesstoken, string recipient, Message message) {
+    require accessValid(username, accessToken);
+    require messageHandle != null;
+    require message.length > 0;
+    ensure getMessages(recipient, database.getUser(recipient)
+        .getAccessToken()).contains(message);
+  }
+
+  public Message[] messages getMessages(string username, string accessToken) {
+    require accessValid(username, accessToken);
+    require messageHandle != null;
+    ensure messages != null;
+  }
+
+  public void messageRead(String username, string accessToken Message message) {
+    require accessValid(username, accessToken);
+    require message != null;
+    require getMessages(username, accessToken).contains(message);
+    ensure !getMessages(username, accessToken).contains(message);
+  }
+}
+\end{verbatim}
+			The \verb|AccessWebService| interface provides three functions: \emph{getAccessToken}, \emph{accessValid} and \emph{access}. \emph{getAccessToken} is used to obtain access tokens. \emph{accessValid} checks, if the provided access token is valid. This function is used by the MSS to authenticate users. The function \emph{access} is used to execute operations on the database. In before a authentification check is made and it is tested if the user is allowed to execute the given operation.
+
+\begin{verbatim}
+Interface AccessWebService {
+  public string accesstoken getAccessToken(string username, string password) {
+    require username.length > 0 && password.length > 0;
+    ensure database.getUser(username).accesstoken == accesstoken &&
+    database.getUser(username).expirationDate;
+    ensure containsLogEntry(user, system.getCurrentDate());
+  }
+
+  public boolean valid accessValid(string username, string accesstoken) {
+	  require database.existsEntry(username);
+	  ensure valid == database.getUser(username).isIsValidToken(accesstoken);
+  }
+
+  public Response r access(string username,
+                              string accesstoken, Operation op) {
+    require database.entryExists(username);
+    ensure iff accessValid(username, accesstoken) then
+      iff database.getUser(username).isLocked() then
+        operation == new PasswordChangeRequiredResponse();
+      else
+        iff database.getUser().getPrivilegeLvl() > getPrivilegeLvl(operation) then
+          operation is executed and r is the response of the operation;
+        else
+          r == new AccessDeniedResponse();
+    ensure if accesstoken is not valid operation is not executed and r is null;
+  }
+}
+\end{verbatim}
+
+	\paragraph{Sequences} table  \\
+		\begin{tabular}{|p{.22\textwidth}|p{.73\textwidth}|}
+			\hline
+			\textit{Sequence Name}&\textbf{accessValid}\\
+			\hline
+			\textit{Preconditions}&
+			\begin{itemize}
+				\item username is contained in the database
+				\item accesstoken is not null
+			\end{itemize}\\
+			\hline
+			\textit{Event order}&
+			\begin{enumerate}[label*=1.\arabic*]
+				\setcounter{enumi}{-1}
+				\item initial call
+				\item AuthUtility requests the given User from the DB
+				\item The DB allocates and populates a User Object
+				\item The BD returns the User Object
+				\item AuthUtility ask the User object, if the token is valid
+				\item The User Object returns a boolean
+				\item This boolean is passed to the client
+			\end{enumerate}\\
+			\hline
+			\textit{Postconditions}&
+			\begin{itemize}
+				\item the database is not modified
+			\end{itemize}\\
+			\hline
+			\textit{Quality requirements}&
+			\begin{itemize}
+				\item The accessValid call shall finish within at most 3 seconds.
+			\end{itemize}\\
+			\hline
+		\end{tabular}
+
+				\begin{tabular}{|p{.22\textwidth}|p{.73\textwidth}|}
+					\hline 
+					\textit{Sequence Name}&\textbf{getAccessToken}\\
+					\hline
+					\textit{Preconditions}&
+					\begin{itemize}
+						\item username is contained in the database
+						\item password is not null
+					\end{itemize}\\
+					\hline
+					\textit{Event order}&
+					\begin{enumerate}[label*=1.\arabic*]
+						\setcounter{enumi}{-1}
+						\item initial request
+						\item AuthUtility requests the given User from the DB
+						\item The DB allocates and populates a User Object
+						\item The BD returns the User Object
+						\item The AuthUtility generates the password hash using HashImpl
+						\addtocounter{enumi}{1}
+						\item The AuthUtility gets the original password hash from the User object
+						\addtocounter{enumi}{1}
+						\item The hashes are compared
+						\item The hashes were equal so an access token is requested from the user object
+						\item The user object checks, if the currently active access token is valid
+						\item The token wasn't valid, so a new token is generated
+						\item The new Token is saved in the Database
+						\item Now the access token is valid and therefore returned to the AuthUtility
+						\item From there on it is passed to the callee
+						\item The password was false so null is returned
+					\end{enumerate}\\
+					\hline
+					\textit{Postconditions}&
+					\begin{itemize}
+						\item the returned access token is valid
+						\item the returned access token is saved persistently in the DB
+					\end{itemize}\\
+					\hline
+					\textit{Quality requirements}&
+					\begin{itemize}
+						\item The getAccessToken call shall finish within at most 3 seconds.
+					\end{itemize}\\
+					\hline
+				\end{tabular}
+
+				\begin{tabular}{|p{.22\textwidth}|p{.73\textwidth}|}
+					\hline
+					\textit{Sequence Name}&\textbf{access}\\
+					\hline
+					\textit{Preconditions}&
+					\begin{itemize}
+						\setcounter{enumi}{-1}
+						\item username is contained in the database
+						\item access token is not null
+						\item the operation is not null
+					\end{itemize}\\
+					\hline
+					\textit{Event order}&
+					\begin{enumerate}[label*=1.\arabic*]
+						\setcounter{enumi}{-1}
+						\item initial request
+						\item AuthUtility requests the given User from the DB
+						\item The DB allocates and populates a User Object
+						\item The BD returns the User Object
+						\item it is checked, if the access token is valid (using the User object)
+						\addtocounter{enumi}{1}
+						\item the token was valid, so the access level of the user is checked
+						\addtocounter{enumi}{1}
+						\item the access level of the operation and the user are compared
+						\item the user is allowed to execute the operation, so the operation is send to the DB
+						\item The DB Response is passed to the AuthUtility
+						\item The Response is passed to the callee
+						\item the user had no sufficient access permissions so null is returned to the callee
+						\item the access token was not valid, so null is returned
+					\end{enumerate}\\
+					\hline
+					\textit{Postconditions}&
+					\begin{itemize}
+						\item the database is not modified
+					\end{itemize}\\
+					\hline
+					\textit{Quality requirements}&
+					\begin{itemize}
+						\item The accessValid call shall finish within at most 3 seconds.
+					\end{itemize}\\
+					\hline
+				\end{tabular}
+		\subsubsection{Boundary conditions}
+			\begin{enumerate}
+				\item MSS exists already.
+				\item The zoo has a sufficiently fast network connection availible to use the system without maintaining full disk caches.
+			\end{enumerate}
+		\subsubsection{Patterns}
+			\paragraph{AbstractFactory}
+				The abstract factory pattern is used, to allow the client component to initialize the UI without knowing the exact implementation. The client component provides different interfaces (figure) which are implemented by UI components (for example figure and figure).
+			\paragraph{Composition}
+				The composition pattern is used by the BudgetManager (figure). The interface \emph{Budget} specifies common operations possible on composed budgets and atomic budgets. It is implemented in different subclasses for example \emph{SubBudget} and \emph{CompositeBudget}. This is useful, because the controller doesn't have to know if a budget is composed out of different budgets or if it is an atomic budget. This simplifies the implementation of the overview screen and other parts using the budget.
+
+	\subsection{Changelog}
+		\begin{enumerate}
+			\item enumerated requirements (Enumerated Requirements Document)
+			\item language change to Java (C is impractical for client applications, due to the fact, that personal computers and tablet clients propably won't run the same operating system and therefore additional effort would be required to port the software. In addition, Java is preferable due to it's UI features (e.g. JFC framework) and the UI will have the same look, no matter which client is used)
+		\end{enumerate}

@@ -1,0 +1,138 @@
+\section{Motivation}
+While there are multiple different research initiatives for \href{https://selfdrivingcars.mit.edu/}{autonomous vehicle perception}, \href{https://spectrum.ieee.org/automaton/robotics/robotics-hardware/startup-spotlight-industrial-perception}{industry robot perception} and \href{https://www.sciencedirect.com/science/article/pii/S1877050918310536}{utility robot perception}, there is literature on social robot perception systems.
+In a recent paper submitted to the IEEE Transactions on Cognitive and Developmental Systems, the Einstein robot created by Hanson Robotics is referenced \cite{7534850} among others showing the limitations of the current approaches: 
+\begin{itemize}
+    \item separated tasks which need to be manually fused
+    \item error prone solutions to the tasks due to the rich variation in dynamic environments, e.g. a bright light beeing detected as a face
+    \item no sub-tasks or dependencies are learned or taken into account
+    \item hardly extensible in terms of scalability (, i.e. too many tasks executed at once will lead to insufficient computing ressources)
+\end{itemize}
+Therefore we attempt to propose and implement a system that is able to deal better with those dynamical environments, high variantions and might eventually be extended to learn continuously. \\
+The here considered examplatory tasks are (sorted by modality):
+\begin{itemize}
+    \item Visual
+    \begin{itemize}
+        \item Face Tracking, landmarks, identification, Gaze, Eye Tracking, Facial Expression, Eyes open/closed, Gender and age classification
+        \item Pose tracking, gesture recognition, gait recognition
+        \item scene classification, Object detection, visual saliency-, color-classification, image captioning 
+    \end{itemize}
+    
+    \item Auditory
+    \begin{itemize}
+        \item Speech recognition (SST, TTS), language classification, multi-speaker separation
+        \item Voice identification, Voice acitvity detection, laugh detector, auditory saliency detection, auditory context classification
+    \end{itemize}
+\end{itemize}
+
+As many of the required tasks for the perception system of a social robot are similar, neural network instances for each task develop often similar weight structures \cite{pratt1993transferring}. 
+This ends in a large number of similar computations that are done multiple times.
+Further each task would need a large amount of training data that is partially not available due a lack of data sets and a lack of variation in these data sets. 
+All these issues shall be tackled in the proposed architecture. 
+\newpage
+\section{Related Work}
+This section contains two parts. In the first a summary of a recent Multi-Task Learning surveys is given. 
+The second part shall summarize the techniques that are used in the proposed architecture. 
+
+
+\subsection{Multi-Task Learning Survey Review}
+\cite{DBLP:journals/corr/Ruder17a} starts by defining Machine Learning as an optimization problem with respect to a certain metric from a certain type of input data. He points out that solving multiple seperate optimization problems that may be semanticly related ignores the information of the relations between the problems. Multi-Task learning is then defined as 'By sharing representations between related tasks, we can enable our model to generalize better on our original task.' \cite{DBLP:journals/corr/Ruder17a}. \\
+Transfer learning and MTL are motivated by human behaviour: \\
+Having done a similar tasks or a set of related tasks, a human seems to integrated this prior knowledge when adapting to new or completely unseen tasks by some sort of task factorization \cite{FleschE10313}. Also human productivity seems to be influenced greatly by knowledge transfer \cite{argote2000knowledge}. \\
+Both can also be motivated from a machine learning point of view: \\
+Transfer Learning (TL) can be seen as transfering the inductive relational bias from one specific, hand chosen task to another. MTL may be seen as sharing inductive relational biases \cite{Caruana1997}\cite{battaglia2018relational}\cite{DBLP:journals/corr/abs-1106-0245}\cite{Caruana1993MultitaskLA}. 
+The author proceeds by pointing out the difference between hard-parameter sharing and soft parameter sharing. \\
+In hard parameter sharing there are a fixed amount of layers that is shared over all tasks on which individual task-based layers set upon \cite{Caruana1997}. 
+\cite{Baxter1997} pointed out that the MTL neural networks have an oder of $N$($, \ N =$ number of Tasks) smaller chance to overfit than task-specific layers.
+Soft parameter sharing employs task.specific models which are reqularized to develop similar weights.
+
+After that a couple of reasons are mentioned to explain the pros of MTL:
+\begin{itemize}
+    \item Implicit data augmentation by training the shared layers on all data in order to introduce many kinds of noise and variation
+    \item inductively transferred bias: If a new task shall be learned it can leverage the already learned features as well as learning new ones if the model capacity is large enough the amount of tasks
+    \item Attention focussing \& representational bias: The importance or usefulness of a certain feature is determined by mutliple tasks, so if all taks specific layers agree on a certain feature it will be trained to be accurate and invariant. This also regularizes the model to learn features that are used by as many task-specific layers as possible \cite{DBLP:journals/corr/abs-1106-0245}.
+    \item Regularization and relational bias: By thre introduced inductive biases it decreases the Rademacher complexity, by that the risk of overfitting.
+\end{itemize}
+\cite{DBLP:journals/corr/Ruder17a} continues by introducing block-sparse regularization. The corresponding loss function for the multi-task setting is described in \cite{Argyriou2006MultiTaskFL}, which will be described in detail in the next subsection. The authors make the assumption that the task share a small set of features, applying a regularization term and the $l_1$-loss function which yields the sparsest solution for most systems of linear equations \cite{donoho2006most}\cite{meinshausen2006} onto multi-task learning. Sparse means that most parameters of the optimized functions (in the MTL use case the entries of a task parameter matrix $A$) are zero. The $l_1$-loss introduced by \cite{doi:10.1137/0907087} is also known as least absoulut shrinkage and selection operator (in short lasso). The method was extended by \cite{bakin1999adaptive} and \cite{Yuan06modelselection} to a mixed approach: Regularize grouped variables to be sparse by applying $l_q$-loss inside a group and $l_1$-loss between groups, denoted by $l_1/l_q$-loss, group-lasso or block sparse regularization. \\
+In order to learn not only closely related tasks, but also less related ones, there needs to be a notion of how related tasks are to share sparsely selected features accordingly. (Ruder, 2017) describes some aproaches to the task relation clustering problem, including but not limited to norm regularizing clustering constratints \cite{evgeniou2005learning}, k-nearest neighbour task clustering \cite{thrun1996discovering}, bayesian methods \cite{heskes2000empirical}. Many of the aproaches rely on predefined sharing structures that either need to be hand-crafted or put into the model before hand \cite{DBLP:journals/corr/Long015a}. \cite{DBLP:journals/corr/abs-1804-08328} recently proposed a practical and accurate method to measure taks relationships. Others exclude the relationships and interaction between tasks and just learn relevant features iteratively \cite{DBLP:journals/corr/LuKZCJF16}. Cross-Stitch networks are special in that sense: Initialized as two different models as in soft-parameter sharing, they learn the sharing relationship between the task-specific features using so called cross-stitch units, which basically learn linear combinations of previous layers. \\
+Another important point that Ruder mentions is the work of \cite{DBLP:journals/corr/KendallGC17}, whom propose weighting the loss functions according to the uncertainty of each task. Finally the author introduces Sluice networks, which will be described in depth in the next subsection.
+
+\subsection{Integrated Methodology}
+
+FRANK-WOLFE ALGO\\
+%https://arxiv.org/pdf/1811.07591.pdf\\
+%https://arxiv.org/pdf/1807.07680.pdf (MIT)\\
+%http://proceedings.mlr.press/v28/jaggi13.pdf\\
+%https://link.springer.com/content/pdf/10.1007\%2F978-3-030-01421-6.pdf\\
+%Simple expl.\\
+%http://www.math.chalmers.se/Math/Grundutb/CTH/tma946/0203/fw_eng.pdf\\
+
+LOSS FUNCTION ADAPTION and non diff optimization:\\
+
+
+Dirichlet as sparsity prior? as meta learning/maml support dirichlet: optimization as model spec (task spec classif generation process?)
+ dirchichlet over alpha and beta while cross stitching?
+How to use dirichlet on beta vae? beta d be hyperp. a, \#latent vars d be b, encoder depth => dirichlet beta vae with selection of $l_q$ as base encoder (learning beta, latent space size/depth, layers-height, metric-dim)
+%https://www.quora.com/What-is-an-intuitive-explanation-of-the-Dirichlet-distribution
+
+
+Conditional gradients\\
+%https://arxiv.org/pdf/1810.02429.pdf\\
+Uncertainty based loss\\
+%https://arxiv.org/pdf/1705.07115.pdf\\
+Gradient normalization for adaptive loss balancing
+%https://www.semanticscholar.org/paper/GradNorm%3A-Gradient-Normalization-for-Adaptive-Loss-Chen-Badrinarayanan/5ffa27fe620e87a8d3ccb63612043f8772784554
+convex multi task feature\\
+%https://link.springer.com/content/pdf/10.1007/s10994-007-5040-8.pdf\\
+
+COMPUTABILITY\\
+Automata Studies Shannon\\
+%https://dl.acm.org/citation.cfm?id=1096884\\
+Task Priorization
+https://www.semanticscholar.org/paper/Dynamic-Task-Prioritization-for-Multitask-Learning-Guo-Haque/f55c1b8b276620c4071641d7f1bd3468ed2d4188
+
+LASSO\\
+Group lasso\\
+%http://pages.stat.wisc.edu/~myuan/papers/glasso.final.pdf\\
+bad group lasso \\
+%http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.143.7164&rep=rep1&type=pdf\\
+mixed lassos\\
+%https://papers.nips.cc/paper/4125-a-dirty-model-for-multi-task-learning.pdf\\
+distr. mixed lasso\\
+%https://arxiv.org/pdf/1612.04022.pdf\\
+
+RELATION INFERENCE\\
+Schema, see bottom, RCN, see bottom\\
+Relation inference networks\\
+%https://arxiv.org/pdf/1802.04687.pdf\\
+Hints\\
+%https://www.sciencedirect.com/science/article/pii/0885064X9090006Y\\
+Task-Coupling\\
+%https://people.eecs.berkeley.edu/~russell/classes/cs294/f05/papers/evgeniou+pontil-2004.pdf\\
+
+LIFELONG\\
+Lifelong learning (Transfer)\\
+%https://arxiv.org/abs/1311.2838\\
+https://arxiv.org/abs/1712.01238
+
+TOREAD\\
+Multi-Modal multi-task learning\\
+%https://www.sciencedirect.com/science/article/pii/S105381191101144X\\
+multi modal latent attributes\\
+%https://qmro.qmul.ac.uk/xmlui/bitstream/handle/123456789/6368/FuEtAl_PAMI2014_GREEN.pdf?sequence=2\\
+
+MODELS\\
+MAML\\
+%https://arxiv.org/pdf/1703.03400.pdf\\
+Sluice \\
+%https://arxiv.org/pdf/1705.08142.pdf\\
+understanding beta vae\\
+%https://arxiv.org/pdf/1804.03599.pdf\\
+beta-vae\\
+%https://openreview.net/pdf?id=Sy2fzU9gl\\
+semi-supervised generative\\
+%https://arxiv.org/abs/1406.5298\\
+
+
+
+
+
